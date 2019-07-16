@@ -1,0 +1,39 @@
+<% include partials/header %>
+
+<div class="container">
+    <header class="jumbotron">
+        <div class="container">
+            <h1>Yoga Choice Made Easy!</h1>
+            <p>A place where you can find your personal path thanks to the experience of who tried before you. </p>
+            <p>
+                <a class="btn btn-primary btn-lg" href="/yoga_schools/new">Add New Yoga Schools
+                </a>
+            </p>
+        </div>
+    </header>
+
+
+    <%# adding the grid %>
+    <div clas="col-lg-12">
+        <h3>the most popular Yoga Schools</h3>
+    </div>
+    <div class="row text-center" style="display:flex; flex-wrap: wrap;">
+        <%school.forEach(function(school){ %>
+            <div class="col-md-3 col-sm-6">
+                <div class="thumbnail">
+                    <img src="<%= school.image %>" >
+                    <div class="caption">
+                        <h3><%= school.name %></h3>
+                        <a href="/yoga_schools/<%= school._id %>" class="btn btn-primary">More Info</a>
+                    </div>
+                </div>   
+                
+            </div>    
+        <% }); %>
+    </div>
+
+
+</div>
+
+
+<% include partials/footer %>
