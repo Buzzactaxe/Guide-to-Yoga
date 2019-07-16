@@ -2,7 +2,9 @@ var express = require('express'),
 	app = express(),
 	bodyParser = require('body-parser'),
 	mongoose = require('mongoose'),
-	School = require('./models/yogaPost');
+	School = require('./models/yogaPost'),
+	User = require('./models/user'),
+	Comment = require('./models/comments');
 
 mongoose.connect('mongodb://localhost/yoga_guide', {
 	useNewUrlParser: true
