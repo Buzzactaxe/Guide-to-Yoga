@@ -4,8 +4,10 @@ var express = require('express'),
 	mongoose = require('mongoose'),
 	School = require('./models/yogaPost'),
 	User = require('./models/user'),
-	Comment = require('./models/comments');
+	Comment = require('./models/comments'),
+	seedsDB = require("./seeds");
 
+seedsDB();
 mongoose.connect('mongodb://localhost/yoga_guide', {
 	useNewUrlParser: true
 });
@@ -66,7 +68,7 @@ app.get('/yoga_schools/new', function (req, res) {
 //SHOW - Fronted shows info about singular yoga school
 app.get('/yoga_schools/:id', function (req, res) {
 	//find school with that id
-	School.findById(req.params.id, function (err, foundSchool) {
+	School.findById(req.params.id).populate("comments").exec(function (err, foundSchool) {
 		if (err) {
 			console.log(err);
 		} else {
