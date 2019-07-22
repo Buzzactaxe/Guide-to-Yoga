@@ -5,9 +5,9 @@ var express = require('express'),
 	School = require('./models/yogaPost'),
 	User = require('./models/user'),
 	Comment = require('./models/comments'),
-	seedsDB = require("./seeds");
+	seedsDB = require('./seeds');
 
-seedsDB();
+// seedsDB();
 mongoose.connect('mongodb://localhost/yoga_guide', {
 	useNewUrlParser: true
 });
@@ -17,8 +17,8 @@ app.use(
 		extended: true
 	})
 );
+app.use(express.static(__dirname + "/public"));
 app.set('view engine', 'ejs');
-
 
 app.get('/', function (req, res) {
 	res.render('landing');
@@ -31,8 +31,7 @@ app.get('/yoga_schools', function (req, res) {
 		if (err) {
 			console.log(err);
 		} else {
-
-			res.render('index', {
+			res.render('yogaSchools/index', {
 				school: allSchools
 			});
 		}
@@ -62,19 +61,56 @@ app.post('/yoga_schools', function (req, res) {
 
 //Frontend NEW - shows form for user to add New yoga school
 app.get('/yoga_schools/new', function (req, res) {
-	res.render('new');
+	res.render('yogaSchools/new');
 });
 
 //SHOW - Fronted shows info about singular yoga school
 app.get('/yoga_schools/:id', function (req, res) {
 	//find school with that id
-	School.findById(req.params.id).populate("comments").exec(function (err, foundSchool) {
+	School.findById(req.params.id).populate('comments').exec(function (err, foundSchool) {
 		if (err) {
 			console.log(err);
 		} else {
 			//show the id data to the url
-			res.render("show", {
+			res.render('yogaSchools/show', {
 				school: foundSchool
+			});
+		}
+	});
+});
+
+//=====
+//COMMENTS ROUTE
+//=====
+
+//Frontend NEW comment- shows form for user to add New comment
+app.get('/yoga_schools/:id/comments/new', function (req, res) {
+	School.findById(req.params.id, function (err, school) {
+		if (err) {
+			console.log(err);
+		} else {
+			res.render('comments/new', {
+				school: school
+			});
+		}
+	});
+});
+
+//Backend CREATE comment- logic to add new comment connected to a single school
+app.post('/yoga_schools/:id/comments', function (req, res) {
+	School.findById(req.params.id, function (err, school) {
+		if (err) {
+			console.log(err);
+			res.redirect('/yoga_schools');
+		} else {
+			Comment.create(req.body.comment, function (err, comment) {
+				if (err) {
+					console.log(err);
+				} else {
+					school.comments.push(comment);
+					school.save();
+					res.redirect('/yoga_schools/' + school._id);
+				}
 			});
 		}
 	});
