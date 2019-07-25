@@ -2,12 +2,13 @@ var express = require('express'),
 	app = express(),
 	bodyParser = require('body-parser'),
 	mongoose = require('mongoose'),
+	passport = require('passport'),
+	LocalStrategy = require('passport-local'),
 	School = require('./models/yogaPost'),
-	User = require('./models/user'),
 	Comment = require('./models/comments'),
+	User = require('./models/user'),
 	seedsDB = require('./seeds');
 
-// seedsDB();
 mongoose.connect('mongodb://localhost/yoga_guide', {
 	useNewUrlParser: true
 });
@@ -17,8 +18,28 @@ app.use(
 		extended: true
 	})
 );
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + '/public'));
 app.set('view engine', 'ejs');
+// seedsDB();
+
+// PASSPORT CONFIGURATION
+app.use(
+	require('express-session')({
+		secret: 'Sometimes you need some help to find the right path.',
+		resave: false,
+		saveUninitialized: false
+	})
+);
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use(function (req, res, next) {
+	res.locals.currentUser = req.user;
+	next();
+});
 
 app.get('/', function (req, res) {
 	res.render('landing');
@@ -32,7 +53,8 @@ app.get('/yoga_schools', function (req, res) {
 			console.log(err);
 		} else {
 			res.render('yogaSchools/index', {
-				school: allSchools
+				school: allSchools,
+				currentUser: req.user
 			});
 		}
 	});
@@ -60,7 +82,7 @@ app.post('/yoga_schools', function (req, res) {
 });
 
 //Frontend NEW - shows form for user to add New yoga school
-app.get('/yoga_schools/new', function (req, res) {
+app.get('/yoga_schools/new', isLoggedIn, function (req, res) {
 	res.render('yogaSchools/new');
 });
 
@@ -84,7 +106,7 @@ app.get('/yoga_schools/:id', function (req, res) {
 //=====
 
 //Frontend NEW comment- shows form for user to add New comment
-app.get('/yoga_schools/:id/comments/new', function (req, res) {
+app.get('/yoga_schools/:id/comments/new', isLoggedIn, function (req, res) {
 	School.findById(req.params.id, function (err, school) {
 		if (err) {
 			console.log(err);
@@ -97,7 +119,7 @@ app.get('/yoga_schools/:id/comments/new', function (req, res) {
 });
 
 //Backend CREATE comment- logic to add new comment connected to a single school
-app.post('/yoga_schools/:id/comments', function (req, res) {
+app.post('/yoga_schools/:id/comments', isLoggedIn, function (req, res) {
 	School.findById(req.params.id, function (err, school) {
 		if (err) {
 			console.log(err);
@@ -115,6 +137,60 @@ app.post('/yoga_schools/:id/comments', function (req, res) {
 		}
 	});
 });
+
+//=====
+//AUTH ROUTE
+//=====
+
+app.get('/register', function (req, res) {
+	res.render('register');
+});
+
+//handles signup logic
+app.post('/register', function (req, res) {
+	var newUser = new User({
+		username: req.body.username
+	});
+	User.register(newUser, req.body.password, function (err, user) {
+		if (err) {
+			console.log(err);
+			return res.render('register');
+		}
+		passport.authenticate('local')(req, res, function () {
+			res.redirect('/yoga_schools');
+		});
+	});
+});
+
+//Show login form
+app.get('/login', function (req, res) {
+	res.render('login');
+});
+
+//hadles login logic
+app.post(
+	'/login',
+	passport.authenticate('local', {
+		successRedirect: '/yoga_schools',
+		failureRedirect: '/login'
+	}),
+	function (req, res) {
+		res.send('login route');
+	}
+);
+
+//logout route
+app.get('/logout', function (req, res) {
+	req.logout();
+	res.redirect('/yoga_schools');
+});
+
+function isLoggedIn(req, res, next) {
+	if (req.isAuthenticated()) {
+		return next();
+	}
+	res.redirect('/login');
+}
 
 //Listening to server
 app.listen(3000, function () {
